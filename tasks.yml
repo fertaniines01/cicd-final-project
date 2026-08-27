@@ -1,0 +1,50 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: cleanup
+spec:
+  description: >-
+    Cette tâche nettoie l'espace de travail (workspace) partagé
+    avant l'exécution du pipeline, afin de garantir un environnement propre.
+  workspaces:
+    - name: source
+  steps:
+    - name: remove
+      image: bash:5.1.4
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/usr/bin/env bash
+        echo "Nettoyage du workspace..."
+        rm -rf $(workspaces.source.path)/*
+        rm -rf $(workspaces.source.path)/.[!.]*
+        echo "Workspace nettoyé avec succès."
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: nose
+spec:
+  description: >-
+    Cette tâche exécute la suite de tests unitaires avec nose (nosetests)
+    sur l'application avant le déploiement.
+  workspaces:
+    - name: source
+  params:
+    - name: args
+      description: Arguments à passer à nosetests
+      type: string
+      default: "-v --with-spec --spec-color --with-coverage --cover-package=service"
+  steps:
+    - name: nose-test
+      image: python:3.9-slim
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/usr/bin/env bash
+        set -e
+        echo "Installation des dépendances..."
+        python -m pip install --upgrade pip
+        pip install nose pinocchio coverage
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        echo "Exécution des tests unitaires avec nose..."
+        nosetests $(params.args)

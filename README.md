@@ -12,7 +12,7 @@ CI/CD complet pour une application Flask (« Counter Service ») en combinant :
 - **OpenShift Pipelines** pour le déploiement continu de l'application
 
 ## Structure du dépôt
-
+ 
 ```
 .
 ├── README.md
